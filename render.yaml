@@ -1,0 +1,88 @@
+# =============================================================================
+# Sentinel — Render.com Blueprint (Infrastructure as Code)
+#
+# Deploy both services with one click:
+#   https://render.com/deploy  →  paste your repo URL
+#
+# Or connect your GitHub repo to Render and it auto-deploys on push.
+# =============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # Backend — FastAPI / uvicorn (Python native runtime)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: sentinel-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # SQLite on Render's persistent disk
+      - key: DATABASE_URL
+        value: sqlite:////opt/render/project/data/sentinel.db
+      # CORS: allow the frontend static site origin (set after first deploy)
+      - key: FRONTEND_ORIGIN
+        sync: false                     # prompts you to fill in on first deploy
+      # Scanner integration (mock by default)
+      - key: ZAP_ENABLED
+        value: "false"
+      - key: ZAP_API_URL
+        value: ""
+      - key: ZAP_API_KEY
+        value: ""
+      - key: ALLOW_LIST
+        value: ""
+      # Auth
+      - key: JWT_SECRET
+        generateValue: true             # Render generates a random secret
+      - key: JWT_EXPIRE_MINUTES
+        value: "1440"
+      # Optional: Google OAuth, SMTP — leave blank to disable
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: SMTP_HOST
+        value: ""
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: ""
+      - key: SMTP_PASSWORD
+        value: ""
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+    disk:
+      name: sentinel-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1                         # 1 GB free-tier disk for SQLite
+
+  # --------------------------------------------------------------------------
+  # Frontend — Vite static site (free, global CDN)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: sentinel-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-store, must-revalidate
+    routes:
+      # SPA fallback — serve index.html for all client routes
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Vite build-time variable: not used directly, but documented for clarity
+      - key: NODE_VERSION
+        value: "20"

@@ -1,0 +1,14 @@
+INFO:     127.0.0.1:62536 - "POST /api/scans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50767 - "GET /api/scans/1834976e-36b0-47a6-9852-043635bb6e65/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50768 - "GET /api/scans/1834976e-36b0-47a6-9852-043635bb6e65/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50769 - "GET /api/scans/1834976e-36b0-47a6-9852-043635bb6e65/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50771 - "GET /api/findings//explanation HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57861 - "GET /api/findings/42666892016336/explanation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57862 - "GET /api/findings/213963193710378/explanation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56818 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64875 - "POST /api/scans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64875 - "GET /api/scans/c0ce1191-1dc5-43ab-b16c-d3c89e3e133d/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64875 - "GET /api/scans/c0ce1191-1dc5-43ab-b16c-d3c89e3e133d/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60193 - "POST /api/scans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60193 - "GET /api/scans/af251f77-20f8-447f-99a8-689576672329/findings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60193 - "GET /api/scans/af251f77-20f8-447f-99a8-689576672329/findings HTTP/1.1" 200 OK

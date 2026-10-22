@@ -1,0 +1,75 @@
+# =============================================================================
+# Sentinel — single-host deployment via Docker Compose.
+#
+#   frontend (nginx)  : serves the Vite build + reverse-proxies /api
+#   backend  (uvicorn): FastAPI
+#
+# Bring everything up:   docker compose up --build -d
+# Tail logs:             docker compose logs -f
+# Tear down:             docker compose down -v
+# =============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # Backend — FastAPI / uvicorn
+  # --------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: sentinel-backend:latest
+    container_name: sentinel-backend
+    restart: unless-stopped
+    environment:
+      # SQLite lives on the mounted volume below so scans/users survive restarts.
+      DATABASE_URL: sqlite:////app/data/sentinel.db
+      # Allow the frontend's nginx origin through CORS (same host, port 8080).
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      # ZAP / OWASP scanner integration (mock by default — safe & self-contained).
+      ZAP_ENABLED: ${ZAP_ENABLED:-false}
+      ZAP_API_URL: ${ZAP_API_URL:-http://zap:8080}
+      ZAP_API_KEY: ${ZAP_API_KEY:-}
+      ALLOW_LIST: ${ALLOW_LIST:-}
+    ports:
+      - "127.0.0.1:8000:8000"   # bound to localhost only; nginx proxies /api
+    volumes:
+      - sentinel-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - sentinel-net
+
+  # --------------------------------------------------------------------------
+  # Frontend — Vite build served by nginx (SPA fallback + /api proxy)
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: sentinel-frontend:latest
+    container_name: sentinel-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"               # http://localhost:8080
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sentinel-net
+
+volumes:
+  sentinel-data:
+
+networks:
+  sentinel-net:
+    driver: bridge
